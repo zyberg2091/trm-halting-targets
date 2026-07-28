@@ -99,7 +99,9 @@ Each run is one (halt threshold, `n_sup`) pair. Five per target:
 
 The threshold analysis holds `n_sup` at 5 and varies the cutoff. The supervision-step analysis holds the cutoff at 0 and varies the budget. Run 1 is shared by both. `n_sup = 1` is the no-halting control, because with one step every sample is a step-1 sample and there is no halting decision.
 
-Five configurations times three targets gives 15 runs, one seed each.
+Five configurations times three targets gives 15 runs, one run each.
+
+No random seed is set. Model initialisation therefore differs across all 15 runs, and because the dataset is generated inside each notebook, the three targets were trained on independently drawn datasets and splits of the same size and distribution: 50,000 uniform 4-digit pairs, split 45,000 and 5,000. Within a notebook the five configurations share one dataset and split. The task distribution is homogeneous and the sample is large, so different draws should be near-equivalent, but the comparison across targets is not on identical data.
 
 ### Logging
 
@@ -107,11 +109,11 @@ Logged every 10 epochs (0 to 90): training cross-entropy and halting loss, halt-
 
 Accuracy throughout means validation sequence exact-match, every non-pad token correct, out of 5,000 samples.
 
-One seed per configuration. This is the study's main limitation and it is bounded in section 10.1 using the `n_sup = 1` runs.
+One run per configuration is the study's main limitation, and it is bounded in section 10.1 using the `n_sup = 1` runs.
 
 ## 5. What the halting target does
 
-**Under both substituted targets, first-step halting saturates while the model is still wrong on the large majority of validation problems. Under the paper's exact-match target it saturates only after the model is largely correct.**
+Each target was run separately, and each produces a self-contained result: under both substituted targets first-step halting saturates while that model is still wrong on the large majority of its validation problems, while under the paper's exact-match target it saturates only after that model is largely correct. The three runs use independently generated datasets, so what follows is a qualitative difference in kind rather than a numerical comparison between them.
 
 Samples using only one supervision step, at halt threshold 0 with `n_sup = 5`:
 
@@ -125,7 +127,7 @@ Samples using only one supervision step, at halt threshold 0 with `n_sup = 5`:
 | 50 | 100.0% (5000) | 100.0% (5000) | 100.0% (5000) |
 | 60 to 90 | 100.0% (5000) | 100.0% (5000) | 100.0% (5000) |
 
-*Percentage of the 5,000 validation samples that used only one supervision step, raw count in brackets. Both values come straight from the logs. A sample counts here if its halt logit exceeded the threshold at step 1, so it stopped after a single pass and did no recursion. All three targets sit at 100% from epoch 50 through 90, so those five epochs are collapsed into one row.*
+*Percentage of the 5,000 validation samples that used only one supervision step, raw count in brackets. Both values come straight from the logs. A sample counts here if its halt logit exceeded the threshold at step 1, so it stopped after a single pass and did no recursion. All three targets sit at 100% from epoch 50 through 90, so those five epochs are collapsed into one row. The three columns come from separate notebook runs on independently generated datasets and initialisations; see section 4.*
 
 Validation accuracy over the same three runs:
 
@@ -142,7 +144,7 @@ Validation accuracy over the same three runs:
 | 80 | 96.86% | 95.90% | 98.38% |
 | 90 | 97.26% | 99.64% | 99.46% |
 
-*Validation sequence exact-match out of 5,000 samples, same epochs and same runs as above. All ten logged epochs.*
+*Validation sequence exact-match out of 5,000 samples, same epochs and same runs as above. All ten logged epochs. The three columns come from separate notebook runs on independently generated datasets and initialisations; see section 4.*
 
 Soft-mean has committed every sample to a single step by epoch 20, when the model solves 9 problems in 100. Geometric-mean does the same by epoch 40, at 14 in 100. Exact-match reaches that point at epoch 50, at 97 in 100.
 
@@ -157,9 +159,9 @@ The gap does not depend on where "saturated" is drawn:
 | epoch it first reaches 100% | 20 | 40 | 50 |
 | accuracy at that epoch | 9.18% | 14.14% | 96.86% |
 
-*Rows alternate between two quantities: an epoch number, and validation exact-match at that epoch. Both come from the two tables above. The ordering across targets holds at every level.*
+*Rows alternate between two quantities: an epoch number, and validation exact-match at that epoch. Both come from the two tables above. Each column is read from its own notebook's runs. The same qualitative split appears at every level: both substituted targets saturate at single-digit accuracy, exact-match at 66.80% or above.*
 
-All three targets end training at 97 to 99% accuracy. The difference in halting behaviour does not show up in the final accuracy number.
+Each of the three ends training between 97 and 99% accuracy on its own validation set. In none of them does the halting behaviour show up in the final accuracy number.
 
 This comparison is at halt threshold 0. Section 6 covers what happens at higher thresholds.
 
@@ -179,7 +181,7 @@ The halt threshold is the cutoff the halt logit must exceed. Raising it should m
 | binary exact-match | 1.5 | 50 | 86.14% | 92.32% |
 | binary exact-match | 3.0 | never reached | | 94.10% |
 
-*`target` and `halt threshold` identify the run; `n_sup = 5` throughout, one seed each. `epoch halting reaches 90%` is the first logged epoch at which at least 90% of the 5,000 validation samples use only one supervision step; "never reached" means that level was not hit within 100 epochs. `accuracy at that epoch` is validation exact-match at that same epoch, blank where the level was never reached. `best accuracy in run` is the highest validation exact-match at any of the 10 logged epochs. All read from the logs. For soft-mean at threshold 3.0 the two accuracy columns hold the same number because epoch 70 is also that run's best epoch.*
+*`target` and `halt threshold` identify the run; `n_sup = 5` throughout, one run each. `epoch halting reaches 90%` is the first logged epoch at which at least 90% of the 5,000 validation samples use only one supervision step; "never reached" means that level was not hit within 100 epochs. `accuracy at that epoch` is validation exact-match at that same epoch, blank where the level was never reached. `best accuracy in run` is the highest validation exact-match at any of the 10 logged epochs. All read from the logs. For soft-mean at threshold 3.0 the two accuracy columns hold the same number because epoch 70 is also that run's best epoch. Rows within one target are on identical data. Rows in different targets are not.*
 
 For the two substituted targets, raising the threshold moves halting from before competence to after it. Soft-mean goes from halting at 2.52% accuracy to halting at 90.04%. Geometric-mean goes from 7.68% to 96.24%, and at threshold 3 it never reaches the 90% level at all.
 
@@ -200,7 +202,7 @@ A higher threshold does not settle halting. It makes it oscillate:
 | 80 | 77.6% (3878) | 76.3% (3816) | 57.4% (2871) |
 | 90 | 88.3% (4413) | 75.0% (3748) | 1.1% (56) |
 
-*Same quantity as the first table in section 5: percentage of the 5,000 validation samples that used only one supervision step, raw count in brackets. Halt threshold 3.0, `n_sup = 5`, one seed. All ten logged epochs, nothing omitted. At halt threshold 0 the same quantity is pinned at 100% from epoch 50 through 90 in all three targets.*
+*Same quantity as the first table in section 5: percentage of the 5,000 validation samples that used only one supervision step, raw count in brackets. Halt threshold 3.0, `n_sup = 5`, one run. All ten logged epochs, nothing omitted. At halt threshold 0 the same quantity is pinned at 100% from epoch 50 through 90 in all three targets. The three columns come from separate notebook runs on independently generated datasets and initialisations; see section 4.*
 
 Through epoch 30 not a single sample halts early in any target. From epoch 40 the number moves up and down without settling. Binary exact-match ends at 1.1%, which is 56 samples out of 5,000, so almost everything is running the full budget again by epoch 90.
 
@@ -224,7 +226,7 @@ Best accuracy barely moves with the budget:
 | geometric-mean | 99.10% | 99.64% | 98.76% | 0.88 |
 | binary exact-match | 99.06% | 99.46% | 99.06% | 0.40 |
 
-*Highest validation exact-match reached at any of the ten logged epochs of that run, out of 5,000 validation samples. Halt threshold is 0 in all nine runs and only the supervision budget differs. `spread` is the largest value minus the smallest for that target, in percentage points. One seed per run.*
+*Highest validation exact-match reached at any of the ten logged epochs of that run, out of 5,000 validation samples. Halt threshold is 0 in all nine runs and only the supervision budget differs. `spread` is the largest value minus the smallest for that target, in percentage points. One run per configuration. The three columns come from separate notebook runs on independently generated datasets and initialisations; see section 4.*
 
 Sixteen supervision steps buy nothing over one on this task. The largest difference anywhere is 1.02 points, and in every target the middle budget happens to be highest, so the ordering is noise rather than a trend.
 
@@ -236,7 +238,7 @@ A larger budget is never faster:
 | geometric-mean | 30 | 50 | 50 |
 | binary exact-match | 30 | 40 | 50 |
 
-*First logged epoch at which validation accuracy reaches 50%, same nine runs. Lower is faster.*
+*First logged epoch at which validation accuracy reaches 50%, same nine runs. Lower is faster. The three columns come from separate notebook runs on independently generated datasets and initialisations; see section 4.*
 
 The single-step runs reach 50% accuracy at epoch 30 in all three targets. Every larger budget takes 10 to 20 epochs longer. The epoch axis understates the gap in compute: before halting engages, an `n_sup = 16` run executes sixteen supervision steps per batch where the single-step run executes one.
 
@@ -259,7 +261,7 @@ Those runs also bound the study's noise:
 | 80 | 76.86% | 98.84% | 98.32% |
 | 90 | 98.90% | 99.10% | 99.06% |
 
-*Validation sequence exact-match out of 5,000 samples, in runs with a single supervision step and therefore no halting decision. All ten logged epochs.*
+*Validation sequence exact-match out of 5,000 samples, in runs with a single supervision step and therefore no halting decision. All ten logged epochs. The three columns come from separate notebook runs on independently generated datasets and initialisations; see section 4.*
 
 Over epochs 50 to 90 these runs span 22.04 points (soft-mean), 3.28 (geometric-mean) and 11.86 (binary exact-match). Soft-mean drops from 98.74% to 76.86% and back to 98.90% in twenty epochs with no halting involved. Any effect smaller than that is not separable from run-to-run variation in this study.
 
@@ -370,9 +372,9 @@ The derivation in 9.1 says the halt head converges toward its target, and the lo
 
 ## 10. Limitations
 
-### 10.1 One seed per configuration
+### 10.1 One run per configuration, no seed control
 
-Every result here comes from a single run. The `n_sup = 1` runs have no halting decision to make, so their epoch-to-epoch movement is ordinary training variation and gives a bound on the study's own noise.
+Every result here comes from a single run with no seed set, so initialisation variance is included in the bounds below rather than controlled for. The `n_sup = 1` runs have no halting decision to make, so their epoch-to-epoch movement is ordinary training variation and gives a bound on the study's own noise.
 
 | target | lowest accuracy, epochs 50 to 90 | highest accuracy, epochs 50 to 90 | spread |
 |---|---|---|---|
@@ -380,7 +382,7 @@ Every result here comes from a single run. The `n_sup = 1` runs have no halting 
 | geometric-mean | 95.82% | 99.10% | 3.28 |
 | binary exact-match | 87.20% | 99.06% | 11.86 |
 
-*Validation sequence exact-match out of 5,000 samples, taken from the five logged epochs 50 through 90 of the `n_sup = 1`, halt-threshold-0 run for that target. `spread` is the highest minus the lowest, in percentage points. These runs use a single supervision step, so no halting decision exists in them.*
+*Validation sequence exact-match out of 5,000 samples, taken from the five logged epochs 50 through 90 of the `n_sup = 1`, halt-threshold-0 run for that target. `spread` is the highest minus the lowest, in percentage points. These runs use a single supervision step, so no halting decision exists in them. The three columns come from separate notebook runs on independently generated datasets and initialisations; see section 4.*
 
 Four stability mechanisms used by the paper are absent here: an exponential moving average of the weights, weight decay, the paper's lower beta2 of 0.95, and stable-max loss. The paper includes EMA to prevent sharp collapse on small data and reports a 7.5-point cost on Sudoku-Extreme when it is removed. The swings above have that signature, a sharp drop with full recovery inside twenty epochs. All four are constant across all 15 runs, so they raise the noise floor uniformly rather than producing any difference between targets, but they are the most likely reason the floor is as high as it is.
 
@@ -388,7 +390,7 @@ A single supervision step removes the halting decision, not the halting loss. Th
 
 Any effect smaller than a target's own spread cannot be separated from run-to-run variation here. That matters unevenly across the results:
 
-- The section 5 finding, halting saturating at 2.52% and 7.68% accuracy under the substituted targets against 96.86% under exact-match, is a gap of 90 points or more and sits far outside any of these bounds.
+- The section 5 finding is a difference in kind rather than in degree: in two targets halting saturates at single-digit accuracy, in one it saturates above 96%. No redraw of 50,000 uniform 4-digit pairs produces that.
 - The section 6 threshold costs, at 1 to 10 points, are not outside them. Read the direction, not the magnitude.
 - The section 7 result that the recursion budget changes accuracy by at most 1.02 points is a null result stated against noise of the same size or larger, so it is a bound rather than a measurement.
 
@@ -442,21 +444,29 @@ The per-sample mask on the halting loss is inert. The loss function returns a ba
 
 ```
 ├── README.md
-├── src/                        model, the three halting-target functions, train/eval entry points
-├── configs/                    one file per run: target, halt threshold, n_sup, seed
-├── logs/
-│   ├── softmean/  geomean/  binary-em/     5 configurations each
-│   ├── per-epoch.csv           one row per (target, configuration, epoch)
-│   ├── step-distributions.csv  one row per (target, configuration, split, epoch, step)
-│   ├── supstep-halt-logits.csv mean validation halt logit per supervision step
-│   └── METRICS.md              every logged field and how the code computes it
-├── analysis/                   extraction and figure scripts
-└── notebooks/                  original exploratory notebooks
+├── notebooks/
+│   ├── trm_qloss_softmean.ipynb    5 configurations, outputs retained
+│   ├── trm_qloss_binary_em.ipynb   5 configurations, outputs retained
+│   └── trm_qloss_geomean.ipynb     5 configurations, outputs retained
+└── logs/
+    ├── softmean/  geomean/  binary-em/     5 files each, one per configuration
+    ├── per-epoch.csv           one row per (target, configuration, epoch)
+    ├── step-distributions.csv  one row per (target, configuration, split, epoch, step)
+    ├── supstep-halt-logits.csv mean validation halt logit per supervision step
+    └── METRICS.md              every logged field and how the code computes it
 ```
+
+`logs/METRICS.md` documents the two places the logs are ambiguous: the last-step group conflates "halted at the final step" with "never halted", and `Avg Steps` is batch-level rather than per-sample.
+
+## Reproducing
+
+Each notebook is self-contained: it builds the dataset, defines the model and its halting target, and runs the five configurations in order. Cell outputs are retained, so the logged numbers can be read without running anything. The files in `logs/` are those outputs parsed into per-epoch tables.
+
+No model checkpoints are released. The runs are short enough to regenerate from the notebooks directly. Note that without seeds a re-run draws a new dataset and a new initialisation, so numbers will differ from those recorded here.
 
 ## Planned additions
 
-- Three seeds on the nine threshold runs, to put the section 6 costs outside the bound in section 10.1.
+- Set seeds for dataset generation, split and initialisation, then run three seeds on the nine threshold runs, to put the section 6 costs outside the bound in section 10.1 and to put all three targets on identical data.
 - Add EMA at 0.999 and re-run the threshold sweep, to test whether the noise floor in section 10.1 falls far enough to make the section 6 threshold costs separable from variation.
 - A sensitivity check at `c = 1.0`, the paper's halting-loss weight, on the three threshold-0 runs.
 - Log the batch-mean halting target each epoch, turning section 9.1 into a directly verified relation.
