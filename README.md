@@ -159,9 +159,9 @@ The gap does not depend on where "saturated" is drawn:
 | epoch it first reaches 100% | 20 | 40 | 50 |
 | accuracy at that epoch | 9.18% | 14.14% | 96.86% |
 
-*Rows alternate between two quantities: an epoch number, and validation exact-match at that epoch. Both come from the two tables above. Each column is read from its own notebook's runs. The same qualitative split appears at every level: both substituted targets saturate at single-digit accuracy, exact-match at 66.80% or above.*
+*Rows alternate between two quantities: an epoch number, and validation exact-match at that epoch. Both come from the two tables above. Each column is read from its own notebook's runs. The same qualitative split appears at every level: both substituted targets saturate below 15% accuracy, exact-match at 66.80% or above.*
 
-Each of the three ends training between 97 and 99% accuracy on its own validation set. In none of them does the halting behaviour show up in the final accuracy number.
+Soft-mean has committed every sample to a single/first step by epoch 20, when the model solves 9 problems in 100. Geometric-mean does the same by epoch 40, at 14 in 100. Exact-match reaches that point at epoch 50, at 97 in 100. Those three readings use 100% as the definition of saturated. The table below repeats the same reading at 50% and at 90%.
 
 This comparison is at halt threshold 0. Section 6 covers what happens at higher thresholds.
 
@@ -183,9 +183,9 @@ The halt threshold is the cutoff the halt logit must exceed. Raising it should m
 
 *`target` and `halt threshold` identify the run; `n_sup = 5` throughout, one run each. `epoch halting reaches 90%` is the first logged epoch at which at least 90% of the 5,000 validation samples use only one supervision step; "never reached" means that level was not hit within 100 epochs. `accuracy at that epoch` is validation exact-match at that same epoch, blank where the level was never reached. `best accuracy in run` is the highest validation exact-match at any of the 10 logged epochs. All read from the logs. For soft-mean at threshold 3.0 the two accuracy columns hold the same number because epoch 70 is also that run's best epoch. Rows within one target are on identical data. Rows in different targets are not.*
 
-For the two substituted targets, raising the threshold moves halting from before competence to after it. Soft-mean goes from halting at 2.52% accuracy to halting at 90.04%. Geometric-mean goes from 7.68% to 96.24%, and at threshold 3 it never reaches the 90% level at all.
+Reading each target's three rows in turn. Soft-mean reaches 90% first-step halting at epoch 10, then 40, then 70 as the threshold goes 0, 1.5, 3.0, with accuracy at those epochs of 2.52%, 53.28% and 90.04%. Geometric-mean reaches it at epoch 30 then epoch 60 for thresholds 0 and 1.5, at 7.68% and 96.24% accuracy, and at threshold 3.0 never reaches it within 100 epochs.
 
-Binary exact-match barely responds between thresholds 0 and 1.5. At epoch 40 it shows 81.0% first-step halting at threshold 0 and 84.1% at threshold 1.5, effectively the same run. Its halt logits move from well below zero to well above 1.5 within a single logging interval, so a cutoff placed between them changes almost nothing. Only threshold 3 sits inside the range the logits actually occupy.
+Binary exact-match reaches the 90% level at epoch 50 for both threshold 0 and threshold 1.5, so the higher cutoff changed the timing not at all. Accuracy at that epoch is 96.86% and 86.14%, lower at the higher cutoff rather than higher.
 
 A higher threshold does not settle halting. It makes it oscillate:
 
@@ -204,13 +204,14 @@ A higher threshold does not settle halting. It makes it oscillate:
 
 *Same quantity as the first table in section 5: percentage of the 5,000 validation samples that used only one supervision step, raw count in brackets. Halt threshold 3.0, `n_sup = 5`, one run. All ten logged epochs, nothing omitted. At halt threshold 0 the same quantity is pinned at 100% from epoch 50 through 90 in all three targets. The three columns come from separate notebook runs on independently generated datasets and initialisations; see section 4.*
 
-Through epoch 30 not a single sample halts early in any target. From epoch 40 the number moves up and down without settling. Binary exact-match ends at 1.1%, which is 56 samples out of 5,000, so almost everything is running the full budget again by epoch 90.
+Through epoch 30 not a single sample halts early in any target. From epoch 40 the number moves up and down without settling. Binary exact-match ends at 1.1%, which is 56 samples out of 5,000, so almost everything is running the full budget again by epoch 90. Its logits fell from an average of 3.174 to 1.204 (the values are from logs/supstep-halt-logits.csv), dropping almost the whole set below the cutoff, alongside validation accuracy falling from 87.94% to 81.12%.
+
+Each validation sample has its own halt logit, so the share in the table is just how many of the 5,000 sit above the cutoff. Training moves those logits up and down, and at cutoff 3.0 they sit right around it, so ordinary movement pushes large numbers of samples across it; at cutoff 0 they sit far above, so nothing crosses and the share stays at 100%.
 
 Halting at threshold 3 is not a stable regime in any target within 100 epochs.
 
-Best accuracy is at threshold 0 in all three targets. Last-epoch accuracy would give a different ordering for soft-mean, whose threshold-0 run sits in a local dip at epoch 90 (97.26%) against 99.68% at epoch 70, so best-checkpoint is the more stable reading of a 10-point curve.
+Best accuracy in the run is highest at threshold 0 for all three: 99.68%, 99.64% and 99.46%. At the other two thresholds it ranges from 90.04% to 98.72%. Best-checkpoint is used here rather than last-epoch accuracy, and the two differ for soft-mean at threshold 0: 99.68% at epoch 70 against 97.26% at epoch 90, from the section 5 accuracy table. Over a 10-point curve the maximum is the more stable of the two.
 
-Raising the threshold therefore fixes the timing problem for the substituted targets and costs accuracy while doing it. On this task that is consistent. Section 7 shows the recursion budget makes almost no difference to accuracy here, so restoring recursion cannot pay for itself, while the higher cutoff leaves halting unsettled.
 
 ## 7. Changing the recursion budget
 
@@ -261,7 +262,7 @@ Those runs also bound the study's noise:
 | 80 | 76.86% | 98.84% | 98.32% |
 | 90 | 98.90% | 99.10% | 99.06% |
 
-*Validation sequence exact-match out of 5,000 samples, in runs with a single supervision step and therefore no halting decision. All ten logged epochs. The three columns come from separate notebook runs on independently generated datasets and initialisations; see section 4.*
+*Validation sequence exact-match out of 5,000 samples, in runs with a single supervision step (n_sup=1) and therefore no halting decision. All ten logged epochs. The three columns come from separate notebook runs on independently generated datasets and initialisations; see section 4.*
 
 Over epochs 50 to 90 these runs span 22.04 points (soft-mean), 3.28 (geometric-mean) and 11.86 (binary exact-match). Soft-mean drops from 98.74% to 76.86% and back to 98.90% in twenty epochs with no halting involved. Any effect smaller than that is not separable from run-to-run variation in this study.
 
@@ -390,7 +391,7 @@ A single supervision step removes the halting decision, not the halting loss. Th
 
 Any effect smaller than a target's own spread cannot be separated from run-to-run variation here. That matters unevenly across the results:
 
-- The section 5 finding is a difference in kind rather than in degree: in two targets halting saturates at single-digit accuracy, in one it saturates above 96%. No redraw of 50,000 uniform 4-digit pairs produces that.
+- The section 5 finding is a difference in kind rather than in degree: in two targets halting saturates below 15% accuracy, in one it saturates above 96%. No redraw of 50,000 uniform 4-digit pairs produces that.
 - The section 6 threshold costs, at 1 to 10 points, are not outside them. Read the direction, not the magnitude.
 - The section 7 result that the recursion budget changes accuracy by at most 1.02 points is a null result stated against noise of the same size or larger, so it is a bound rather than a measurement.
 
