@@ -1,6 +1,6 @@
 # Halting-target choice in the Tiny Recursive Model
 
-Reimplementation of the Tiny Recursive Model ([arXiv:2510.04871](https://arxiv.org/abs/2510.04871)) from scratch, with the halting objective as the only variable. 15 controlled runs on 4-digit addition.
+Reimplementation of the Tiny Recursive Model ([arXiv:2510.04871](https://arxiv.org/abs/2510.04871)) from scratch, comparing three halting objectives across 15 runs on 4-digit addition.
 
 ## 1. Recursive models with deep supervision
 
@@ -22,7 +22,7 @@ In the TRM paper, `t` is binary exact-match, 1 if every token of the answer is c
 
 ## 3. The modification under test
 
-This study replaces the paper's halting target with two alternatives and changes nothing else. Model, data, optimiser, schedule and the recursion structure of section 1 are identical across all runs. Only the definition of `t` differs.
+This study replaces the paper's halting target with two alternatives and changes nothing else in the implementation. Model architecture, data-generation process, optimizer, schedule and the recursion structure of section 1 are the same for all three targets. Only the definition of `t` differs between corresponding configurations.
 
 An answer has `L` non-pad tokens. `y_i` is the ground-truth token at position i, `ŷ_i` the model's argmax there, and `p_i` the probability the model assigns to `y_i`. Pad positions are excluded from all three targets.
 
@@ -40,7 +40,7 @@ Why substitute at all? Binary exact-match is 0 for almost every sample early in 
 
 4-digit addition. Each example is a pair of uniformly sampled integers in [1000, 9999]. The input is the two operands with a `+` token between them, giving a fixed length of 9 tokens. The target is the sum, 4 or 5 digits, right-padded to length 5. Vocabulary is 12 tokens: digits 0 to 9, a `+` token (id 10), and a pad token (id 11). Pad positions are excluded from the loss and from all three halting targets.
 
-50,000 examples generated once, split 45,000 train and 5,000 validation by `random_split`. The same split is used in every run.
+Within each target notebook, 50,000 examples were generated once and split into 45,000 training and 5,000 validation examples. The five configurations within that notebook shared the same dataset and split. The three target notebooks used independently generated datasets and splits.
 
 ### Model
 
