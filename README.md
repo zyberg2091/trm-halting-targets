@@ -103,14 +103,6 @@ Five configurations times three targets gives 15 runs, one run each.
 
 No random seed is set. Model initialisation therefore differs across all 15 runs, and because the dataset is generated inside each notebook, the three targets were trained on independently drawn datasets and splits of the same size and distribution: 50,000 uniform 4-digit pairs, split 45,000 and 5,000. Within a notebook the five configurations share one dataset and split. The task distribution is homogeneous and the sample is large, so different draws should be near-equivalent, but the comparison across targets is not on identical data.
 
-### Logging
-
-Logged every 10 epochs (0 to 90): training cross-entropy and halting loss, halt-logit statistics, the per-sample halting-step distribution for training and validation, validation accuracy, and mean validation halt logit per supervision step. Field definitions are in `logs/METRICS.md`.
-
-Accuracy throughout means validation sequence exact-match, every non-pad token correct, out of 5,000 samples.
-
-One run per configuration is the study's main limitation, and it is bounded in section 10.1 using the `n_sup = 1` runs.
-
 ## 5. What the halting target does
 
 Each target was run separately, and each produces a self-contained result: under both substituted targets first-step halting saturates while that model is still wrong on the large majority of its validation problems, while under the paper's exact-match target it saturates only after that model is largely correct. The three runs use independently generated datasets, so what follows is a qualitative difference in kind rather than a numerical comparison between them.
@@ -453,12 +445,9 @@ The per-sample mask on the halting loss is inert. The loss function returns a ba
     ├── softmean/  geomean/  binary-em/     5 files each, one per configuration
     ├── per-epoch.csv           one row per (target, configuration, epoch)
     ├── step-distributions.csv  one row per (target, configuration, split, epoch, step)
-    ├── supstep-halt-logits.csv mean validation halt logit per supervision step
-    └── METRICS.md              every logged field and how the code computes it
+    └── supstep-halt-logits.csv mean validation halt logit per supervision step
+
 ```
-
-`logs/METRICS.md` documents the two places the logs are ambiguous: the last-step group conflates "halted at the final step" with "never halted", and `Avg Steps` is batch-level rather than per-sample.
-
 ## Reproducing
 
 Each notebook is self-contained: it builds the dataset, defines the model and its halting target, and runs the five configurations in order. Cell outputs are retained, so the logged numbers can be read without running anything. The files in `logs/` are those outputs parsed into per-epoch tables.
