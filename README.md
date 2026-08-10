@@ -119,7 +119,7 @@ Samples using only one supervision step, at halt threshold 0 with `n_sup = 5`:
 | 50 | 100.0% (5000) | 100.0% (5000) | 100.0% (5000) |
 | 60 to 90 | 100.0% (5000) | 100.0% (5000) | 100.0% (5000) |
 
-*Percentage of the 5,000 validation samples that used only one supervision step, raw count in brackets. Both values come straight from the logs. A sample counts here if its halt logit exceeded the threshold at step 1, so it stopped after a single pass and did no recursion. All three targets sit at 100% from epoch 50 through 90, so those five epochs are collapsed into one row. The three columns come from separate notebook runs on independently generated datasets and initialisations; see section 4.*
+*Percentage of the 5,000 validation samples that used only one supervision step, raw count in brackets. Both values come straight from the logs. A sample counts here if its halt logit exceeded the threshold at step 1, so it stopped after one supervision step and took no further supervision steps. All three targets sit at 100% from epoch 50 through 90, so those five epochs are collapsed into one row. The three columns come from separate notebook runs on independently generated datasets and initialisations; see section 4.*
 
 Validation accuracy over the same three runs:
 
@@ -138,7 +138,8 @@ Validation accuracy over the same three runs:
 
 *Validation sequence exact-match out of 5,000 samples, same epochs and same runs as above. All ten logged epochs. The three columns come from separate notebook runs on independently generated datasets and initialisations; see section 4.*
 
-Soft-mean has committed every sample to a single step by epoch 20, when the model solves 9 problems in 100. Geometric-mean does the same by epoch 40, at 14 in 100. Exact-match reaches that point at epoch 50, at 97 in 100.
+
+Soft-mean has committed every sample to a single/first step by epoch 20, when the model solves 9 problems in 100. Geometric-mean does the same by epoch 40, at 14 in 100. Exact-match reaches that point at epoch 50, at 97 in 100.
 
 The gap does not depend on where "saturated" is drawn:
 
@@ -152,8 +153,6 @@ The gap does not depend on where "saturated" is drawn:
 | accuracy at that epoch | 9.18% | 14.14% | 96.86% |
 
 *Rows alternate between two quantities: an epoch number, and validation exact-match at that epoch. Both come from the two tables above. Each column is read from its own notebook's runs. The same qualitative split appears at every level: both substituted targets saturate below 15% accuracy, exact-match at 66.80% or above.*
-
-Soft-mean has committed every sample to a single/first step by epoch 20, when the model solves 9 problems in 100. Geometric-mean does the same by epoch 40, at 14 in 100. Exact-match reaches that point at epoch 50, at 97 in 100. Those three readings use 100% as the definition of saturated. The table below repeats the same reading at 50% and at 90%.
 
 This comparison is at halt threshold 0. Section 6 covers what happens at higher thresholds.
 
@@ -343,7 +342,7 @@ Binary exact-match: `t = 0`, because not every position is correct. The logit is
 
 Now read the same three numbers against the higher thresholds. Soft-mean's 1.099 is below 1.5, and geometric-mean's 0.165 is far below it, so at threshold 1.5 neither sample halts on this evidence alone. That is the mechanism behind section 6: raising the bar does not repair the target, it just requires the target to climb further before halting engages, which pushes halting past the point where the model has actually learned the task.
 
-It also accounts for the ordering in section 5. Soft-mean's target crosses 0.5 as soon as half the digits are right. Geometric-mean's crosses when the confidence-weighted score does, which takes longer. Binary exact-match's crosses only when half the answers are fully right.
+It also accounts for the ordering in section 5. Soft-mean's target crosses 0.5 once more than half the digits are right. Geometric-mean's target exceeds 0.5 when the confidence-weighted score does, which takes longer. Binary exact-match's mean target exceeds 0.5 only when more than half the answers are fully right.
 
 ### 9.3 The accuracy rise is the model learning the task
 

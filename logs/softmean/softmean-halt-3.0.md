@@ -37,7 +37,6 @@ Source: trm_qloss_softmean.ipynb, cell 27. Every value below is parsed verbatim 
 | val steps mean | Mean recorded halting step over the validation set. | Recursion compute at evaluation; read next to val acc to price the halting decisions. |
 | %step1 (val), %never (val) | The same two indicators as the train columns, measured with evaluation-time halting on the validation set. | Confirms the training-side halting behavior transfers to eval, where halting decides which step's answer is actually used. |
 
-Fine print for every definition (populations, pad handling, the step-5 conflation): METRICS.md.
 
 ## Training halt-step distribution (per-sample counts, whole train set)
 Counts of samples by recorded halting step. Column `step 5` mixes two cases the log cannot separate: halted exactly at step 5, and never halted (both are recorded as 5). `val acc (epoch)` is that epoch's validation exact-match accuracy — the only accuracy the logs record — repeated here for alignment; it is not a per-split or per-step accuracy.
