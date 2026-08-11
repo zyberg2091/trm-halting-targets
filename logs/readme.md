@@ -1,1 +1,1 @@
-
+The notebooks contain the original saved training outputs. The files in this directory are formatted extracts of those outputs for easier inspection. Each Markdown file identifies its source notebook and cell; the metric values are copied from the corresponding notebook output.
