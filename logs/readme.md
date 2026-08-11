@@ -1,1 +1,3 @@
-The notebooks contain the original saved training outputs. The files in this directory are formatted extracts of those outputs for easier inspection. Each Markdown file identifies its source notebook and cell; the metric values are copied from the corresponding notebook output.
+# Logs
+
+The original training outputs are saved in the notebooks under `notebooks/`. The files in this directory are formatted extracts of those outputs for easier reading. Each Markdown file identifies its source notebook and cell. The metric values are taken from the corresponding notebook output; only the formatting and organisation were added.
