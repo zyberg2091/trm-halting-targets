@@ -453,6 +453,10 @@ Each notebook is self-contained: it builds the dataset, defines the model and it
 
 No model checkpoints are released. The runs are short enough to regenerate from the notebooks directly. Note that without seeds a re-run draws a new dataset and a new initialisation, so numbers will differ from those recorded here.
 
+## AI assistance
+
+AI assistance was used for literature discovery and structuring and editing parts of this report. I independently built the experiments, checked the reported results, read the referenced papers and technical claims. 
+
 ## Planned additions
 
 - Set seeds for dataset generation, split and initialisation, then run three seeds on the nine threshold runs, to put the section 6 costs outside the bound in section 10.1 and to put all three targets on identical data.
@@ -465,3 +469,6 @@ No model checkpoints are released. The runs are short enough to regenerate from 
 ## Reference
 
 Tiny Recursive Model: [arXiv:2510.04871](https://arxiv.org/abs/2510.04871)
+
+
+
