@@ -1,66 +1,69 @@
 # Halting targets in a Tiny Recursive Model
 
-I built a simplified version of the [Tiny Recursive Model](https://arxiv.org/abs/2510.04871) to study one question: what should the halt head be trained to predict?
+Addition experiments with a simplified TRM-style MLP. The halt head predicts one of three targets, all excluding padding:
 
-The paper uses binary exact match, so the target is 1 only when the complete answer is correct. I compared it with two graded targets that seemed like reasonable alternatives. Both gave the halt head a denser signal, but they also made the model stop after one supervision step while its answers were still mostly wrong.
+- `softmean`: fraction of answer tokens correct.
+- `geomean`: geometric mean of correct-token probabilities.
+- `binary_em`: whether the whole answer is correct.
 
-This is a small TRM-style experiment, not a reproduction of the paper's results. My model has 740,413 parameters and uses a two-layer MLP over one vector per sample. The paper uses a Transformer over per-position representations.
+Read the [three-seed results](docs/seeded_results.md) for 4-digit and 8-digit findings; the [revised report on the original study](docs/technical_report.md) covers the model, losses and unseeded runs. The [original repository snapshot](archive/original_unseeded/readme.md) preserves the earlier notebooks, logs and report without changes.
 
-## What I tested
+## Repository layout
 
-The task was 4-digit addition. Each target had five runs: halt thresholds of `0`, `1.5`, and `3.0` with `n_sup = 5`, followed by supervision budgets of `1`, `5`, and `16` at threshold `0`. The threshold-0, `n_sup = 5` run is shared between the two comparisons, giving 15 runs in total.
+| Path | Contents |
+| --- | --- |
+| `src/` | Modular code for the seeded follow-up experiments. |
+| `run.ipynb` | Entry point for a new training run; open from the repository root. |
+| `notebooks/4digit/epochs_100/seed_{0,40,100}/` | Seeded 4-digit notebooks, with saved outputs. |
+| `notebooks/8digit/epochs_100/seed_0/` | Earlier 100-epoch snapshots of the seed-0 runs. |
+| `notebooks/8digit/epochs_200/seed_{0,40,100}/` | Extended seeded 8-digit notebooks, with saved outputs. |
+| `logs/` | Text exports matching the newer notebook hierarchy. |
+| `docs/` | Current reports and the reorganization record. |
+| `scripts/` | Saved-output extraction and verification. |
+| `archive/original_unseeded/` | All 25 files from GitHub commit `0294880`, including 3 original notebooks, 15 run summaries, 3 CSV tables and the original report. |
+| `CODE_PROVENANCE.md` | Mapping from notebook cells to source modules. |
 
-Each run used 45,000 training examples, 5,000 validation examples, and 100 epochs. I compared:
+Each experiment leaf contains `softmean`, `geomean` and `binary_em` notebooks or logs. Keep the original unseeded notebooks in the archive: the log extractor scans every notebook under the current `notebooks/` tree. See [version comparison and preservation details](docs/reorganization.md).
 
-* **Binary exact match:** 1 only if the full answer is correct.
-* **Soft mean:** the fraction of answer positions predicted correctly.
-* **Geometric mean:** the geometric mean of the probabilities assigned to the correct tokens.
+## What is here
 
-The motivation for the graded targets was simple. Exact match is almost always zero early in training, while partial credit might give the halt head something useful to learn. The experiments showed a problem with this change: a partially correct answer can receive a high target even when the sequence is still wrong.
+| Digits | Epochs | Seeds | Notebooks / logs | Main runs |
+| ---: | ---: | --- | ---: | ---: |
+| 4 | 100 | 0, 40, 100 | 9 / 9 | 45 |
+| 8 | 100 | 0 | 3 / 3 | 15 |
+| 8 | 200 | 0, 40, 100 | 9 / 9 | 45 |
 
-## Results
+Each notebook has five `(maximum supervision steps, halt-logit threshold)` settings: `(5, 0)`, `(5, 1.5)`, `(5, 3.0)`, `(1, 0)`, `(16, 0)`.
 
-At threshold `0` with `n_sup = 5`, the two graded targets moved almost every validation sample to one supervision step much earlier than binary exact match:
+Shared settings: 45,000 training / 5,000 validation examples; batch size 32; Adam, `1e-4`; halt-loss weight `c=0.1`; `T=3`, `n=6`. One outer supervision step still includes inner recursion.
 
-| Halt target        | Near-total first-step halting | Validation exact match at that point |
-| ------------------ | ----------------------------: | -----------------------------------: |
-| Soft mean          |         epoch 20: 5,000/5,000 |                                9.18% |
-| Geometric mean     |         epoch 40: 4,999/5,000 |                               14.14% |
-| Binary exact match |         epoch 50: 5,000/5,000 |                               96.86% |
+All 105 main-run outputs are complete. The 15 older 8-digit seed-0 runs duplicate the corresponding 200-epoch runs' first 100 epochs; they are snapshots, not independent experiments.
 
-Soft mean therefore committed every sample to one step while the model solved about 9% of the validation set. Geometric mean did the same at about 14%. With binary exact match, this happened only after the model was already mostly correct.
+## Results to look for
 
-Higher thresholds delayed halting, but threshold `3` did not produce a stable regime within 100 epochs. The fraction of samples halting after one step moved sharply between checkpoints as their halt logits crossed back and forth over the cutoff.
+- At threshold 0, majority training-sample step-1 stopping begins with softmean, then geomean, then binary exact match, across task sizes and seeds.
+- After every training sample stops at step 1, forced step 2 lowers validation token accuracy in 155/161 logged checkpoints. Shared weights still train; skipped steps have no direct loss.
+- At 8 digits, one supervision step beats the best five-step result in all six graded-target comparisons. Binary exact match favors five steps at two of three seeds.
 
-Changing the supervision budget also gave no clear accuracy improvement in these runs:
+Accuracy comparisons use peak saved exact match with halting disabled. Five-step results also select the best threshold and forced depth. Overlapping 100-epoch snapshots are excluded.
 
-| Halt target        | `n_sup = 1` | `n_sup = 5` | `n_sup = 16` |
-| ------------------ | ----------: | ----------: | -----------: |
-| Soft mean          |      98.90% |      99.68% |       98.66% |
-| Geometric mean     |      99.10% |      99.64% |       98.76% |
-| Binary exact match |      99.06% |      99.46% |       99.06% |
+## Using the files
 
-These are the best validation accuracies observed in each run. The largest within-target difference was 1.02 percentage points. This does not show that recursion is useless: `n_sup = 1` still contains the inner recursive computation. It only shows that extra supervision steps did not provide a clear benefit on this task.
+Paths: `notebooks/<task>/epochs_<budget>/seed_<seed>/<target>.ipynb`, with matching `.txt` files under `logs/`. Logs contain five runs, diagnostics and previews, labeled by cell and settings.
 
-The main conclusion is narrower. The halt target strongly changed when the model stopped, but 4-digit addition was too easy to reveal the accuracy cost of stopping too early. A better test needs a task where additional computation actually improves the answer.
+From the repository root, with Python 3.10+:
 
-## Limits of this experiment
+```bash
+python scripts/extract_logs.py
+python scripts/extract_logs.py --check
+```
 
-These results are preliminary. There is one run per configuration and no fixed random seed. Each target notebook generated its own dataset, split, and initialization, so the cross-target numbers are descriptive rather than a controlled paired comparison. Exact reruns will not reproduce the recorded values.
+Extraction uses the standard library; training needs PyTorch and Jupyter/Colab. Outside Colab, skip the final runtime cell. Notebook prose was edited; code and saved outputs are preserved.
 
-Training was also unstable, and this implementation omits several stabilizers used in the paper, including EMA, weight decay, stable-max loss, and its optimizer settings. The model architecture and validation procedure also differ from the paper, so the accuracy numbers should not be compared directly with its results.
+Epoch markers appear every epoch; detailed metrics every ten. `%never` includes last-step halts. Dependency versions are unpinned; model checkpoints are absent. Earlier unseeded experiments are available in [the local archive](archive/original_unseeded/readme.md) as well as Git history. The original and seeded implementations differ, including a correction to the per-sample halt-loss mask; do not treat the archived runs as extra seeds of the newer implementation.
 
-The logs do not record correctness after every supervision step or the mean halt target during training. The intended per-sample mask on the halt loss was also ineffective because the loss had already been reduced to a batch mean. This applies to all 15 runs, but it should be corrected in a follow-up experiment.
+## Running the source package
 
-## Code and logged results
+The source package is already combined with this repository. Open `run.ipynb` from the repository root with PyTorch and Jupyter or Colab available. Set the options before importing `src`; restart the kernel if they change after import. This starts new training. Exploratory diagnostics remain in the experiment notebooks. See [code provenance](CODE_PROVENANCE.md) for the source mappings.
 
-The three notebooks contain the model, data generation, training loop, and five configurations for each target. Their outputs are retained, so the reported numbers can be inspected without rerunning the experiments.
-
-* [`notebooks/trm_qloss_softmean.ipynb`](notebooks/trm_qloss_softmean.ipynb)
-* [`notebooks/trm_qloss_geomean.ipynb`](notebooks/trm_qloss_geomean.ipynb)
-* [`notebooks/trm_qloss_binary_em.ipynb`](notebooks/trm_qloss_binary_em.ipynb)
-* [`logs/per-epoch.csv`](logs/per-epoch.csv)
-* [`logs/step-distributions.csv`](logs/step-distributions.csv)
-* [`logs/supstep-halt-logits.csv`](logs/supstep-halt-logits.csv)
-
-No checkpoints are included. The next useful experiment would use identical datasets and initialization seeds across targets, multiple runs per configuration, and a task where extra supervision steps measurably improve accuracy.
+**AI assistance:** The AI-generated `scripts/extract_logs.py` copies saved notebook outputs without rerunning training. Reports and documentation were drafted and edited with AI assistance.
