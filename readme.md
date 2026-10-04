@@ -23,7 +23,7 @@ Read the [three-seed results](docs/seeded_results.md) for 4-digit and 8-digit fi
 | `archive/original_unseeded/` | All 25 files from GitHub commit `0294880`, including 3 original notebooks, 15 run summaries, 3 CSV tables and the original report. |
 | `CODE_PROVENANCE.md` | Mapping from notebook cells to source modules. |
 
-Each experiment leaf contains `softmean`, `geomean` and `binary_em` notebooks or logs. Keep the original unseeded notebooks in the archive: the log extractor scans every notebook under the current `notebooks/` tree. See [version comparison and preservation details](docs/reorganization.md).
+Each experiment leaf contains `softmean`, `geomean` and `binary_em` notebooks or logs. Keep the original unseeded notebooks in the archive: the log extractor scans every notebook under the current `notebooks/` tree.
 
 ## What is here
 
