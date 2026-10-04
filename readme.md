@@ -66,4 +66,4 @@ Epoch markers appear every epoch; detailed metrics every ten. `%never` includes 
 
 The source package is already combined with this repository. Open `run.ipynb` from the repository root with PyTorch and Jupyter or Colab available. Set the options before importing `src`; restart the kernel if they change after import. This starts new training. Exploratory diagnostics remain in the experiment notebooks. See [code provenance](CODE_PROVENANCE.md) for the source mappings.
 
-**AI assistance:** The AI-generated `scripts/extract_logs.py` copies saved notebook outputs without rerunning training. Reports and documentation were drafted and edited with AI assistance.
+AI assistance: The research, experiments, analysis and interpretation were conducted by me. AI assistance was used for the scripts/extract_logs.py utility, which copies saved notebook outputs without rerunning training and for drafting and editing reports and documentation.
