@@ -201,7 +201,7 @@ At the logged checkpoints through epoch 30, no sample halts at step 1 in any tar
 
 Each validation sample has its own halt logit. The table counts how many of the 5,000 exceed the cutoff. At threshold 3.0, changes in the logits move many samples across that cutoff between checkpoints. At threshold 0, all logits remain above the cutoff at the later logged checkpoints, keeping the share at 100%.
 
-First-step halting at threshold 3.0 does not settle in these original 100-epoch runs. The [seeded results](seeded_results.md#1-the-target-changes-when-early-stopping-takes-over) check the effect with fixed seeds and a longer budget.
+First-step halting at threshold 3.0 does not settle in these original 100-epoch runs. The [seeded results](seeded_results.md#2-graded-targets-lead-to-stopping-while-most-answers-are-still-wrong) check the effect with fixed seeds and a longer budget.
 
 Best accuracy in the run is highest at threshold 0 for all three: 99.68%, 99.64% and 99.46%. At the other two thresholds it ranges from 90.04% to 98.72%. Best-checkpoint is used here rather than last-epoch accuracy, and the two differ for soft-mean at threshold 0: 99.68% at epoch 70 against 97.26% at epoch 90, from the section 5 accuracy table. These are selected best checkpoints, not estimates of average or final-checkpoint performance.
 
@@ -222,7 +222,7 @@ The best logged accuracies are close across the three budgets:
 
 *Highest validation exact-match reached at any of the ten logged epochs of that run, out of 5,000 validation samples. Halt threshold is 0 in all nine runs and only the supervision budget differs. `spread` is the largest value minus the smallest for that target, in percentage points. One run per configuration. Within each target, budgets share the dataset and split but use separate model initialisations; see section 4.*
 
-In these original runs, sixteen supervision steps do not beat one, and the largest within-target spread is 1.02 percentage points. With one unseeded run per setting, this does not establish that the ordering is noise or that extra supervision can never help. The [seeded comparison](seeded_results.md#3-extra-supervision-has-no-consistent-accuracy-advantage) revisits that conclusion.
+In these original runs, sixteen supervision steps do not beat one, and the largest within-target spread is 1.02 percentage points. With one unseeded run per setting, this does not establish that the ordering is noise or that extra supervision can never help. The [seeded comparison](seeded_results.md#4-more-supervision-steps-do-not-consistently-beat-one-step-training) revisits that conclusion.
 
 The larger budgets reach 50% validation exact match later in these original runs:
 
@@ -356,7 +356,7 @@ One supervision step reaches similar best logged accuracy to sixteen in the orig
 
 This comparison tests the outer supervision loop. Every configuration, including `n_sup = 1`, retains the inner recursion of T = 3 cycles with n = 6 latent updates. Its contribution remains untested; that needs a matched non-recursive baseline.
 
-Different targets can have similar best logged accuracy despite very different stopping behaviour. This does not prove that the task never benefits from additional computation; the [seeded runs](seeded_results.md#3-extra-supervision-has-no-consistent-accuracy-advantage) show target-dependent exceptions.
+Different targets can have similar best logged accuracy despite very different stopping behaviour. This does not prove that the task never benefits from additional computation; the [seeded runs](seeded_results.md#4-more-supervision-steps-do-not-consistently-beat-one-step-training) show target-dependent exceptions.
 
 ### 9.5 What this task can and cannot measure
 
@@ -392,17 +392,17 @@ The original study uses 4-digit addition and a 740K-parameter model, with a 2-la
 
 ### 10.3 Inner recursion was not ablated
 
-The original runs show little best-checkpoint benefit from larger outer supervision budgets (section 7). Every configuration retains inner recursion, so its necessity is untested. The [new forced-depth measurements](seeded_results.md#2-complete-early-stopping-removes-later-step-supervision) address whether continuing the trained model improves its answer; they do not replace an inner-recursion ablation.
+The original runs show little best-checkpoint benefit from larger outer supervision budgets (section 7). Every configuration retains inner recursion, so its necessity is untested. The [new forced-depth measurements](seeded_results.md#3-an-extra-step-can-make-a-good-answer-worse) address whether continuing the trained model improves its answer; they do not replace an inner-recursion ablation.
 
 ### 10.4 What the logs do not record
 
-The original logs record halt logits at each supervision step, but not correctness. They cannot show whether forcing the model to continue improves its answer. The [seeded study](seeded_results.md#2-complete-early-stopping-removes-later-step-supervision) includes these measurements.
+The original logs record halt logits at each supervision step, but not correctness. They cannot show whether forcing the model to continue improves its answer. The [seeded study](seeded_results.md#3-an-extra-step-can-make-a-good-answer-worse) includes these measurements.
 
 The halting target is also missing: it is computed for the loss and then discarded. A direct check of the fitting account in section 9.1 needs per-sample targets alongside predicted halt probabilities. Batch means would show only aggregate agreement.
 
 ### 10.5 Known quirks in the logged quantities
 
-These quirks apply to the original implementation. Some affect training as well as the logged values; sharing a quirk across targets does not rule out interactions with those targets. The [seeded report](seeded_results.md#4-what-this-adds-and-what-remains-unresolved) identifies the halt-loss mask fix and the padding issue that remains.
+These quirks apply to the original implementation. Some affect training as well as the logged values; sharing a quirk across targets does not rule out interactions with those targets. The [seeded report](seeded_results.md#1-experimental-setup) identifies the halt-loss mask fix and the padding issue that remains.
 
 The last-step group includes both samples that never halt and samples that halt exactly at the final step. This makes `%never` and the final column of each halting-step distribution upper bounds on the number that never halt. Steps 1 through `n_sup - 1` are unambiguous.
 
